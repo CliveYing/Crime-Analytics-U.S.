@@ -1,0 +1,211 @@
+---
+title: "Seminar4-2 group acitivity"
+author: "wzho6305"
+date: "09/12/2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##### Group activity 4-2 ######
+
+##### Step and discussion question 1: #####
+```{r import packages, read in data, plot the independent and dependent variables}
+# install relevant packages
+
+library(foreign)
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(lme4)
+library(arm)
+library(reshape2)
+
+# read in data
+
+data <- read.csv("NSW_Crime_data_clean-1.csv")
+head(data)
+names(data)
+
+# plot the variables
+
+par(mfrow = c(3,2))
+hist(data$Murder)
+hist(data$Robbery.without.a.weapon)
+hist(data$Break...Enter..Dwelling.)
+hist(data$Motor.Vehicle.Theft)
+hist(data$Fraud)
+
+```
+
+```{r choose 5 independent variables and dependent variable}
+
+# 4 independent variables: Median_rent_weekly, Median_tot_hhd_inc_weekly, completed.Year.12, Population.25.34
+
+# dependent variable: number of Robbery without a weapon
+
+```
+
+##### Step and discussion question 2: #####
+
+```{r transformation and standardization of the data }
+
+data$z.Median_rent_weekly  <- scale(data$Median_rent_weekly,
+      scale = (sd(data$Median_rent_weekly, na.rm = T) *2))
+data$z.Median_tot_hhd_inc_weekly  <- scale(data$Median_tot_hhd_inc_weekly,
+      scale = (sd(data$Median_tot_hhd_inc_weekly, na.rm = T) *2))
+
+robberymodel.3 <- lm(Robbery.without.a.weapon ~ z.Median_rent_weekly + z.Median_tot_hhd_inc_weekly + X..of.People.who.completed.Year.12
+                     + X..Population.25.34, data = data)
+
+display(robberymodel.3)
+
+# plot individual rent}
+ggplot(
+  data,
+  aes(x= z.Median_rent_weekly, y =Robbery.without.a.weapon )) +
+  geom_point(alpha = 0.5)+
+
+geom_smooth(se = FALSE) +
+ ## scale_y_continuous(labels = dollar)+
+  theme_bw()
+
+model.rent <- lm(Robbery.without.a.weapon ~ z.Median_rent_weekly, data = data)
+display(model.rent)
+
+plot(model.rent)
+
+# plot individual household}
+ggplot(
+  data,
+  aes(x= z.Median_tot_hhd_inc_weekly, y =Robbery.without.a.weapon )) +
+  geom_point(alpha = 0.5)+
+
+geom_smooth(se = FALSE) +
+ ## scale_y_continuous(labels = dollar)+
+  theme_bw()
+
+model.hhd <- lm(Robbery.without.a.weapon ~ z.Median_tot_hhd_inc_weekly, data = data)
+display(model.hhd)
+
+plot(model.hhd)
+
+# plot individual X..of.People.who.completed.Year.12}
+ggplot(
+  data,
+  aes(x= X..of.People.who.completed.Year.12, y =Robbery.without.a.weapon )) +
+  geom_point(alpha = 0.5)+
+
+geom_smooth(se = FALSE) +
+ ## scale_y_continuous(labels = dollar)+
+  theme_bw()
+
+model.edu <- lm(Robbery.without.a.weapon ~ X..of.People.who.completed.Year.12, data = data)
+display(model.edu)
+
+plot(model.edu)
+
+# plot individual age}
+ggplot(
+  data,
+  aes(x= X..Population.25.34, y =Robbery.without.a.weapon )) +
+  geom_point(alpha = 0.5)+
+
+geom_smooth(se = FALSE) +
+ ## scale_y_continuous(labels = dollar)+
+  theme_bw()
+
+model.edu <- lm(Robbery.without.a.weapon ~ X..Population.25.34, data = data)
+display(model.edu)
+
+plot(model.edu)
+
+```
+
+```{r log transformation}
+# we noticed that the data of Median_rent_weekly and Median_tot_hhd_inc_weekly in need to be standardized.
+# we choose to use logarithm which affects the magnitude of the coefficient that corresponds to the logged variable, but it doesn’t affect the value of the outcome. 
+
+log.Median_rent_weekly <- log(data$Median_rent_weekly)
+log.Median_tot_hhd_inc_weekly <- log(data$Median_tot_hhd_inc_weekly)
+log.X..Population.25.34 <- log(data$X..Population.25.34)
+log.X..of.People.who.completed.Year.12 <- log(data$X..of.People.who.completed.Year.12)
+log.Robbery.without.a.weapon <- log(data$Robbery.without.a.weapon)
+
+
+par(mfrow = c(1,2))
+plot(data$Median_rent_weekly, data$Robbery.without.a.weapon)
+plot(log.Median_rent_weekly, log.Robbery.without.a.weapon)
+
+plot(data$Median_tot_hhd_inc_weekly, data$Robbery.without.a.weapon)
+plot(log.Median_tot_hhd_inc_weekly, log.Robbery.without.a.weapon)
+
+plot(data$X..Population.25.34, data$Robbery.without.a.weapon)
+plot(log.X..Population.25.34, log.Robbery.without.a.weapon)
+
+plot(data$X..of.People.who.completed.Year.12, data$Robbery.without.a.weapon)
+plot(log.X..of.People.who.completed.Year.12, log.Robbery.without.a.weapon)
+
+```
+theory: we speculate that the independent variables Median_rent_weekly, Median_tot_hhd_inc_weekly, completed.Year.12, Population.25.34 potentially have strong relationships on the number of the robbery without a weapon in each LGA. 
+
+# build the model
+
+Step and discussion question 3:
+
+```{r theory formation}
+
+# Model with scaled height and race using linear regression
+model.all <- lm (Robbery.without.a.weapon ~ Median_rent_weekly + Median_tot_hhd_inc_weekly + X..Population.25.34
+                 + X..of.People.who.completed.Year.12 , data = data)
+
+plot(model.all)
+summary(model.all)
+
+# The residuals vs Fitted graph represents Residual = Observed – Predicted. It represents the distance between opbserved point versus our predicted point. We have a pretty good result that almost all the point are near the zero line, which represents that our residual is quite small. We find equally spread residuals around a horizontal line with distinct patterns, that is a good indication you have linear relationships.
+
+#Normal Q-Q
+#This plot shows if residuals are normally distributed. Do residuals follow a straight line well or do they deviate severely? It’s good if residuals are lined well on the straight dashed line.
+
+#Residuals vs Leverage
+#We watch out for outlying values at the upper right corner or at the lower right corner. Those spots are the places where cases can be influential against a regression line. Look for cases outside of a dashed line. In this case, we have a outlier on the top left(8) and top right corner (84)
+
+```
+
+##### Step and discussion question 4: #####
+```{r analyse the results and discussions}
+
+# interpretations:
+
+# the intercept of the model is -1.2, indicating that holding other all the independent variables equal to 0. It refers to when the city have zero weekly rent payment, zero household income, zero population from 25-34 and no one complete year 12. 
+
+# the coefficient of the independent variable indicates, taking Median_rent_weekly for example, for the one unit increase in Median_rent_weekly, the number of robbery increases by 0.0057. Same thing for the rest of the independent variables. 
+
+# the coefficient of Median_rent_weekly is 0.0057 and its standard error is 0.0035, which indicates that Median_rent_weekly is not a strong indicator of the relationship. On the contrary, the coefficient of X..Population.25.34 is twice than its standard deviation, which indicates that X..Population.25.34 has a strong relationship with dependent variable. 
+
+```
+
+##### Step and discussion question 5: #####
+```{r ethical concerns}
+
+# for the median_rent_weekly, we use the threshhold of 450 to classify rich neighborhood and poor neighborhood. 
+# we can group by the richness and conduct confusion matrix to see what the false positive and false negative to further discuss if there is any ethical issues. 
+
+
+# further discussions:
+# give more weight to outliers. we should consider more effects when we evaluate each individuals.
+
+```
+
+##### Step and discussion question 6: #####
+```{r factors excluded from this data}
+
+# other factors: gender, race, etc. 
+
+```
+
